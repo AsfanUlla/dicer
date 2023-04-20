@@ -10,7 +10,7 @@ from starlite.middleware import RateLimitConfig
 
 from api.views import jobs, health_check
 
-rate_limit_config = RateLimitConfig(rate_limit=("minute", 20), exclude=["/schema"])
+rate_limit_config = RateLimitConfig(rate_limit=("minute", 20), exclude=["/schema", "/"])
 
 async def get_db_connection() -> None:
     engine = engine_finder()
