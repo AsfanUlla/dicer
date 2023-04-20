@@ -2,7 +2,7 @@ import uvicorn
 
 from pydantic import BaseSettings
 
-from starlite import Starlite, State
+from starlite import Starlite, State, OpenAPIConfig
 from piccolo.engine.postgres import PostgresEngine
 from starlite.plugins.piccolo_orm import PiccoloORMPlugin
 from piccolo.engine import engine_finder
@@ -31,7 +31,8 @@ app = Starlite(
     on_startup=[get_db_connection], 
     on_shutdown=[close_db_connection],
     plugins=[PiccoloORMPlugin()],
-    middleware=[rate_limit_config.middleware]
+    middleware=[rate_limit_config.middleware],
+    openapi_config=OpenAPIConfig(title="Scrapy API", version="1.0.0")
 )
 
 if __name__ == "__main__":

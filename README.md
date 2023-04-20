@@ -46,4 +46,6 @@ python main.py
 
 ## API Documentation
 
-//TODO
+- OpenAPI Documentation:
+  - http://localhost:8000/schema
+  - http://localhost:8000/schema/swagger

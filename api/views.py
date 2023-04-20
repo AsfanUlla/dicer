@@ -14,8 +14,8 @@ async def jobs(
     q: str = "",
     location: str = "",
     sort: str = "id",
-    limit: str = '10',
-    offset: str = 0,
+    limit: int = 10,
+    offset: int = 0,
     forceScrape: bool = False
 ) -> Response[dict[str, Any]]:
     data = []
@@ -26,7 +26,7 @@ async def jobs(
                                     ScrapeData.skills.ilike("%"+q+"%"),
                                     ScrapeData.jobLocation.ilike("%"+location+"%")
                                 )
-            if int(offset) > count:
+            if offset > count:
                 offset = 0
             data = await ScrapeData.select()\
                             .where(
@@ -34,8 +34,8 @@ async def jobs(
                                 ScrapeData.skills.ilike("%"+q+"%"),
                                 ScrapeData.jobLocation.ilike("%"+location+"%")
                             )\
-                            .limit(int(limit))\
-                            .offset(int(offset))\
+                            .limit(limit)\
+                            .offset(offset)\
                             .order_by(
                                 getattr(ScrapeData, sort, "id")
                             )
