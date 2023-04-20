@@ -36,11 +36,13 @@ python main.py
 
 ## API Features `/jobs?<params>`
 
+- Fast
 - Pagination
 - Sort
 - Query based on technology and location
 - Rate Limit 20/min
 - Unit tests
+- [Piccolo ORM](https://piccolo-orm.com/)
 
 (Note: Api is designed in such a fasion that if the query result is empty it will initiate a background task to scrape 50 jobs based on the query parameters)
 
@@ -49,3 +51,12 @@ python main.py
 - OpenAPI Documentation:
   - http://localhost:8000/schema
   - http://localhost:8000/schema/swagger
+
+#### /jobs? query params:
+
+    q                   Jobs search query(technology)
+    location            Jobs Location
+    sort                sort results based on title|postedDate|modifiedDate|created_at ...
+    limit               limit number of results per page
+    offset              Offset for pagination
+    forceScrape         Force initiates background scraping task overiding the default behaviour
