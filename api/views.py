@@ -16,30 +16,31 @@ async def jobs(
     sort: str = "id",
     limit: str = '10',
     offset: str = 0,
-    forceScrape: str | None = None
+    forceScrape: bool = False
 ) -> Response[dict[str, Any]]:
     data = []
-    try:
-        count = await ScrapeData.count().where(
+    if not forceScrape:
+        try:
+            count = await ScrapeData.count().where(
+                                    #ScrapeData.title.ilike("%"+q+"%"),
+                                    ScrapeData.skills.ilike("%"+q+"%"),
+                                    ScrapeData.jobLocation.ilike("%"+location+"%")
+                                )
+            if int(offset) > count:
+                offset = 0
+            data = await ScrapeData.select()\
+                            .where(
                                 #ScrapeData.title.ilike("%"+q+"%"),
                                 ScrapeData.skills.ilike("%"+q+"%"),
                                 ScrapeData.jobLocation.ilike("%"+location+"%")
+                            )\
+                            .limit(int(limit))\
+                            .offset(int(offset))\
+                            .order_by(
+                                getattr(ScrapeData, sort, "id")
                             )
-        if int(offset) > count:
-            offset = 0
-        data = await ScrapeData.select()\
-                        .where(
-                            #ScrapeData.title.ilike("%"+q+"%"),
-                            ScrapeData.skills.ilike("%"+q+"%"),
-                            ScrapeData.jobLocation.ilike("%"+location+"%")
-                        )\
-                        .limit(int(limit))\
-                        .offset(int(offset))\
-                        .order_by(
-                            getattr(ScrapeData, sort, "id")
-                        )
-    except Exception as exc:
-        print(exc)
+        except Exception as exc:
+            print(exc)
     if not data:
         scrape = Scrapy()
         params = {}
@@ -47,8 +48,11 @@ async def jobs(
             params["q"] = q
         if location != "":
             params["location"] = location
+        message = "Data not Available initiating background scrape job check back in ~ 60Sec"
+        if forceScrape:
+            message = "Force Starting Scrape Task in Background check back in ~ 60Sec"
         return Response(
-            {"data": "Data not Available initiating scrape job check back in ~ 60Sec"},
+            {"message": message},
             background=BackgroundTask(scrape.start_scrape, params=params),
         )
 
