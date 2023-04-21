@@ -22,17 +22,17 @@ async def jobs(
     if not forceScrape:
         try:
             count = await ScrapeData.count().where(
-                                    #ScrapeData.title.ilike("%"+q+"%"),
-                                    ScrapeData.skills.ilike("%"+q+"%"),
-                                    ScrapeData.jobLocation.ilike("%"+location+"%")
+                                    ScrapeData.jobLocation.ilike("%"+location+"%")\
+                                    & ScrapeData.title.ilike("%"+q+"%")\
+                                    | ScrapeData.skills.ilike("%"+q+"%")\
                                 )
             if offset > count:
                 offset = 0
             data = await ScrapeData.select()\
                             .where(
-                                #ScrapeData.title.ilike("%"+q+"%"),
-                                ScrapeData.skills.ilike("%"+q+"%"),
-                                ScrapeData.jobLocation.ilike("%"+location+"%")
+                                ScrapeData.jobLocation.ilike("%"+location+"%")\
+                                & ScrapeData.title.ilike("%"+q+"%")\
+                                | ScrapeData.skills.ilike("%"+q+"%")
                             )\
                             .limit(limit)\
                             .offset(offset)\
