@@ -1,7 +1,7 @@
 # Scrapy
 
 - Web Scrapper to scrape jobs data from www.dice.com
-  (Note: Indeed kept blocking(403), didn't have enough time to figure it out so went with dice.com which is similar to indeed)
+   (Note: Indeed kept blocking(403), didn't have enough time to figure it out so went with dice.com which is similar to indeed)
 - Api starts scrapping in the background if the data is not available in the local Database this behaviour can also be forced check api docs below
 
 ## Prerequisites
