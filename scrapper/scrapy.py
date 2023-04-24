@@ -63,8 +63,8 @@ class Scrapy:
             )
             response.raise_for_status()
             response = response.json()["data"]
-        except httpx.HTTPError as exc:
-            print(f"HTTP Exception for {exc.request.url} - {exc}")
+        except httpx.HTTPStatusError as exc:
+                print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
         return response
 
     async def scrape_job(self, **kwargs):
@@ -81,8 +81,8 @@ class Scrapy:
                 find_jd = soup.find("div", {"data-testid": "jobDescriptionHtml"})
                 if find_jd:
                     update_data["description"] = find_jd.text
-            except httpx.HTTPError as exc:
-                print(f"HTTP Exception for {exc.request.url} - {exc}")
+            except httpx.HTTPStatusError as exc:
+                print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
             
             if "skills" in update_data.keys() or "description" in update_data.keys():
                 await ScrapeData.update({**update_data}).where(
