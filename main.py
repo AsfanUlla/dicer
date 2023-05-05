@@ -38,5 +38,6 @@ app = Starlite(
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        reload="True"
+        reload="True",
+        port=8000
     )
