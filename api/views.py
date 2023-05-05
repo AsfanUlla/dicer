@@ -1,7 +1,7 @@
 from starlite import get, BackgroundTask, Response
 from typing import Any
 from api.schema import ScrapeData
-from scrapper.scrapy import Scrapy
+from scraper.scrapy import Scrapy
 import asyncio
 
 @get("/")
