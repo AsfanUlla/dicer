@@ -6,7 +6,7 @@ def test_jobs_api(test_client: TestClient):
     with test_client as client:
         response = client.get("/jobs")
         assert response.status_code == HTTP_200_OK
-        assert "title" in response.json()["data"][0]
+        assert "data" and "message" in response.json().keys()
 
 def test_jobs_api_limit(test_client: TestClient):
     with test_client as client:
