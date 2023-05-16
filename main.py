@@ -2,13 +2,12 @@ import uvicorn
 
 from pydantic import BaseSettings
 
-from starlite import Starlite, State, OpenAPIConfig
-from piccolo.engine.postgres import PostgresEngine
+from starlite import Starlite, OpenAPIConfig
 from starlite.plugins.piccolo_orm import PiccoloORMPlugin
 from piccolo.engine import engine_finder
 from starlite.middleware import RateLimitConfig
 
-from api.views import jobs, health_check
+from api.views import jobs, health_check, reset
 
 rate_limit_config = RateLimitConfig(rate_limit=("minute", 20), exclude=["/schema", "/"])
 
@@ -23,7 +22,8 @@ async def close_db_connection() -> None:
 
 route_handler = [
     jobs,
-    health_check
+    health_check,
+    reset
 ]
 
 app = Starlite(
@@ -32,12 +32,12 @@ app = Starlite(
     on_shutdown=[close_db_connection],
     plugins=[PiccoloORMPlugin()],
     middleware=[rate_limit_config.middleware],
-    openapi_config=OpenAPIConfig(title="Scrapy API", version="1.0.0")
+    openapi_config=OpenAPIConfig(title="Scrapy API", version="1.0.0"),
 )
 
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        reload="True",
+        reload=True,
         port=8000
     )

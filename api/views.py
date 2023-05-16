@@ -3,6 +3,8 @@ from typing import Any
 from api.schema import ScrapeData
 from scraper.scrapy import Scrapy
 import asyncio
+import json
+from api.utils import UUIDEncoder
 
 @get("/")
 def health_check() -> dict[str, bool]:
@@ -21,19 +23,13 @@ async def jobs(
     data = []
     if not forceScrape:
         try:
-            # count = await ScrapeData.count().where(
-            #                         ScrapeData.jobLocation.ilike("%"+location+"%")\
-            #                         & ScrapeData.title.ilike("%"+q+"%")\
-            #                         | ScrapeData.skills.ilike("%"+q+"%")\
-            #                     )
-            # if offset > count:
-            #     offset = 0
             data = await ScrapeData.select()\
                             .where(
                                 (ScrapeData.title.ilike("%"+q+"%"))\
                                  | (ScrapeData.skills.ilike("%"+q+"%"))\
                                  & (ScrapeData.jobLocation.ilike("%"+location+"%"))
                             )\
+                            .columns(ScrapeData.all_columns()[1:])\
                             .limit(limit)\
                             .offset(offset)\
                             .order_by(
@@ -42,18 +38,32 @@ async def jobs(
         except Exception as exc:
             print(exc)
     if not data:
-        scrape = Scrapy()
         params = {}
         if q != "":
             params["q"] = q
         if location != "":
             params["location"] = location
-        message = "Data not Available initiating background scrape job check back in ~ 60Sec"
-        if forceScrape:
-            message = "Force Starting Scrape Task in Background check back in ~ 60Sec"
+        scrape = Scrapy()
+        fresh_jobs_data = await scrape.scrape_search(params=params)
         return Response(
-            {"message": message},
-            background=BackgroundTask(scrape.start_scrape, params=params),
+            {
+                "message": "Freshly scraped Data",
+                "data": fresh_jobs_data
+            },
+            background=BackgroundTask(scrape.scrape_job, jobs=fresh_jobs_data),
         )
+    return Response(
+        {
+            "message": "Existing Jobs data use forceScrape to force a new scape job",
+            "data": data
+        }
+    )
 
-    return Response(data)
+@get('/reset')
+async def reset() -> Response[dict[str, str]]:
+    await ScrapeData.delete(force=True)
+    return Response(
+        {
+            "message": "Db Cleared"
+        }
+    )

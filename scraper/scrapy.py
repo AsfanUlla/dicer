@@ -1,10 +1,7 @@
-import requests
 import httpx
 import json
 from urllib.parse import urlencode
-import asyncio
 from api.schema import ScrapeData
-import datetime
 from bs4 import BeautifulSoup
 import datetime
 
@@ -34,67 +31,52 @@ class Scrapy:
             'DNT': '1',
         }
 
-    async def start_scrape(self, **kwargs):
-        async with httpx.AsyncClient() as client:
-            print("--------Scrape Started-------")
-            d1 = datetime.datetime.now()
-            initial_job_data = await self.scrape_search(client=client, **kwargs)
-            if initial_job_data:
-                await self.db_handler(data=initial_job_data)
-                print("----Initial data inserted-----")
-                await self.scrape_job(client=client, jobs=initial_job_data)
-                print("----skills and JD scrapped-----")
-            print("--------Scrape Ended---------")
-            d2 = datetime.datetime.now()
-            total_time = d2-d1
-            print("Time Taken: %s" % str(total_time))
-            await client.aclose()
-
     async def scrape_search(self, **kwargs):
         params = {**self.params, **kwargs.get("params", {})}
         headers = {**self.headers, **kwargs.get("headers", {})}
-        client = kwargs.get("client")
         response = None
-        try:
-            response = await client.get(
-                url=kwargs.get("url", self.url),
-                params=params,
-                headers=headers
-            )
-            response.raise_for_status()
-            response = response.json()["data"]
-        except httpx.HTTPStatusError as exc:
-                print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    url=kwargs.get("url", self.url),
+                    params=params,
+                    headers=headers
+                )
+                response.raise_for_status()
+                response = await self.db_handler(data=response.json()["data"])
+            except httpx.HTTPStatusError as exc:
+                    print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
+            await client.aclose()
         return response
 
-    async def scrape_job(self, **kwargs):
-        client = kwargs.get("client")
-        for job in kwargs.get("jobs"):
-            update_data = {}
-            try:
-                job_page = await client.get(url=job["detailsPageUrl"])
-                soup = BeautifulSoup(job_page.content, "html.parser")
-                find_skills = soup.find("div", {"data-cy": "skillsList"})
-                if find_skills:
-                    skills = [skill.text.strip() for skill in find_skills.findChildren() ]
-                    update_data["skills"] = ",".join(skills[:-1])
-                find_jd = soup.find("div", {"data-testid": "jobDescriptionHtml"})
-                if find_jd:
-                    update_data["description"] = find_jd.text
-            except httpx.HTTPStatusError as exc:
-                print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
-            
-            if "skills" in update_data.keys() or "description" in update_data.keys():
-                await ScrapeData.update({**update_data}).where(
-                    ScrapeData.jobId == job["jobId"]
-                )
-                print("-----------Updated %s-------------" % job["jobId"])
-        return True
-            
 
+    async def scrape_job(self, **kwargs):
+        async with httpx.AsyncClient() as client:
+            for job in kwargs.get("jobs"):
+                update_data = {}
+                try:
+                    job_page = await client.get(url=job["detailsPageUrl"])
+                    soup = BeautifulSoup(job_page.content, "html.parser")
+                    find_skills = soup.find("ul", {"data-testid": "skillsList"})
+                    if find_skills:
+                        skills = [skill.text.strip() for skill in find_skills.findChildren()]
+                        update_data["skills"] = ",".join(skills[:-1])
+                    find_jd = soup.find("div", {"data-testid": "jobDescriptionHtml"})
+                    if find_jd:
+                        update_data["description"] = find_jd.text
+                except httpx.HTTPStatusError as exc:
+                    print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
+                if "skills" in update_data.keys() or "description" in update_data.keys():
+                    await ScrapeData.update({**update_data}).where(
+                        ScrapeData.jobId == job["jobId"]
+                    )
+                    print("-----------Updated %s-------------" % job["jobId"])
+            await client.aclose()
+            
 
     async def db_handler(self, **kwargs):
-        await ScrapeData.create_table(if_not_exists=True) 
+        await ScrapeData.create_table(if_not_exists=True)
+        inserted_data = []
         for data in kwargs.get("data"):
             data['postedDate'] = datetime.datetime.strptime(
                 data['postedDate'],
@@ -105,8 +87,15 @@ class Scrapy:
                 '%Y-%m-%dT%H:%M:%S%z'
             )
             data["jobLocation"] = data["jobLocation"]["displayName"]
-            await ScrapeData.insert(ScrapeData(**data))
-
-# if __name__ == "__main__":
-#     scrape = Scrapy()
-#     asyncio.run(scrape.start_scrape())
+            try:
+                inserted = await ScrapeData.insert(
+                    ScrapeData(**data)
+                ).on_conflict(
+                    action="DO UPDATE",
+                    values=ScrapeData.all_columns(),
+                    target=ScrapeData.jobId
+                ).returning(*ScrapeData.all_columns()[1:])
+                inserted_data.append(inserted[0])
+            except Exception as exc:
+                print(exc)
+        return inserted_data
