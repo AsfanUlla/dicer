@@ -94,7 +94,7 @@ class Scrapy:
                     action="DO UPDATE",
                     values=ScrapeData.all_columns(),
                     target=ScrapeData.jobId
-                ).returning(*ScrapeData.all_columns())
+                ).returning(*ScrapeData.all_columns()[1:])
                 inserted_data.append(inserted[0])
             except Exception as exc:
                 print(exc)
