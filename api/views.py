@@ -29,6 +29,7 @@ async def jobs(
                                  | (ScrapeData.skills.ilike("%"+q+"%"))\
                                  & (ScrapeData.jobLocation.ilike("%"+location+"%"))
                             )\
+                            .columns(ScrapeData.all_columns()[1:])\
                             .limit(limit)\
                             .offset(offset)\
                             .order_by(
@@ -47,15 +48,14 @@ async def jobs(
         return Response(
             {
                 "message": "Freshly scraped Data",
-                "data": json.loads(json.dumps(fresh_jobs_data, cls=UUIDEncoder))
+                "data": fresh_jobs_data
             },
             background=BackgroundTask(scrape.scrape_job, jobs=fresh_jobs_data),
         )
-
     return Response(
         {
             "message": "Existing Jobs data use forceScrape to force a new scape job",
-            "data": json.loads(json.dumps(data, cls=UUIDEncoder))
+            "data": data
         }
     )
 
