@@ -1,8 +1,7 @@
 import datetime
 
 from piccolo.columns.column_types import (
-    JSON,
-    JSONB,
+    UUID,
     ForeignKey,
     Integer,
     Varchar,
@@ -14,6 +13,7 @@ from piccolo.columns.column_types import (
 from piccolo.table import Table
 
 class ScrapeData(Table):
+    id = UUID(primary_key=True)
     title = Text()
     jobLocation = Text()
     postedDate = Timestamptz()
@@ -22,11 +22,9 @@ class ScrapeData(Table):
     salary = Text()
     companyName = Text()
     summary = Text()
-    description = Text()
-    skills = Text()
-    #exp_required = Text() # Is generally available in description
-    #job_responsibilities = Text() # Is generally available in description
-    jobId = Text()
+    description = Text(default="Scraping...")
+    skills = Text(default="Scraping...")
+    jobId = Text(unique=True, required=True)
     modifiedDate = Timestamptz()
     created_at = Timestamp(auto_update=datetime.datetime.now)
     
