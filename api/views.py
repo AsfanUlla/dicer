@@ -23,13 +23,12 @@ async def jobs(
     data = []
     if not forceScrape:
         try:
-            data = await ScrapeData.select()\
+            data = await ScrapeData.select(ScrapeData.all_columns(exclude=['id']))\
                             .where(
                                 (ScrapeData.title.ilike("%"+q+"%"))\
                                  | (ScrapeData.skills.ilike("%"+q+"%"))\
                                  & (ScrapeData.jobLocation.ilike("%"+location+"%"))
                             )\
-                            .columns(ScrapeData.all_columns()[1:])\
                             .limit(limit)\
                             .offset(offset)\
                             .order_by(

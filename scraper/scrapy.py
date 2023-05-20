@@ -52,6 +52,7 @@ class Scrapy:
 
     async def scrape_job(self, **kwargs):
         async with httpx.AsyncClient() as client:
+            print("======================= Start HTML Scrape ======================")
             for job in kwargs.get("jobs"):
                 update_data = {}
                 try:
@@ -71,6 +72,7 @@ class Scrapy:
                         ScrapeData.jobId == job["jobId"]
                     )
                     print("-----------Updated %s-------------" % job["jobId"])
+            print("======================= END HTML Scrape ========================")
             await client.aclose()
             
 
@@ -94,7 +96,7 @@ class Scrapy:
                     action="DO UPDATE",
                     values=ScrapeData.all_columns(),
                     target=ScrapeData.jobId
-                ).returning(*ScrapeData.all_columns()[1:])
+                ).returning(*ScrapeData.all_columns(exclude=['id']))
                 inserted_data.append(inserted[0])
             except Exception as exc:
                 print(exc)
