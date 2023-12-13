@@ -1,4 +1,4 @@
-# Scrapy
+# Dicer
 
 - Web Scraper to scrape jobs data from www.dice.com
 - (Note: Indeed kept blocking(403), didn't have enough time to figure it out so went with dice.com which is similar to indeed)
